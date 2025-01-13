@@ -6,15 +6,20 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './config/firebase';
 import Login from './screens/Login';
 import Signup from './screens/Signup';
-import Chat from './screens/Chat';
-import Home from './screens/Home';
+import Home from './screens/Home';  // Complete the import for Home
+import CarDetails from './screens/CarDetail'
+import BookingConfirmation from './screens/BookingConfirmation'
+
+import { insertCarRecords } from './insert'; // Import the insert function
+
+
 
 const Stack = createStackNavigator();
 const AuthenticatedUserContext = createContext({});
 
 const AuthenticatedUserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-return (
+  return (
     <AuthenticatedUserContext.Provider value={{ user, setUser }}>
       {children}
     </AuthenticatedUserContext.Provider>
@@ -23,18 +28,19 @@ return (
 
 function ChatStack() {
   return (
-    <Stack.Navigator defaultScreenOptions={Home}>
-      <Stack.Screen name='Home' component={Home} />
-      <Stack.Screen name='Chat' component={Chat} />
-    </Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: true }}>
+      <Stack.Screen name="Home" component={Home} />
+      <Stack.Screen name="CarDetails" component={CarDetails} />
+      <Stack.Screen name="BookingConfirmation" component={BookingConfirmation} />
+          </Stack.Navigator>
   );
 }
 
 function AuthStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name='Login' component={Login} />
-      <Stack.Screen name='Signup' component={Signup} />
+      <Stack.Screen name="Login" component={Login} />
+      <Stack.Screen name="Signup" component={Signup} />
     </Stack.Navigator>
   );
 }
@@ -42,28 +48,30 @@ function AuthStack() {
 function RootNavigator() {
   const { user, setUser } = useContext(AuthenticatedUserContext);
   const [isLoading, setIsLoading] = useState(true);
-useEffect(() => {
-    // onAuthStateChanged returns an unsubscriber
+
+  useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(
       auth,
-      async authenticatedUser => {
-        authenticatedUser ? setUser(authenticatedUser) : setUser(null);
+      (authenticatedUser) => {
+        setUser(authenticatedUser);
         setIsLoading(false);
       }
     );
-// unsubscribe auth listener on unmount
+
     return unsubscribeAuth;
-  }, [user]);
-if (isLoading) {
+  }, []);
+
+  if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size='large' />
+        <ActivityIndicator size="large" />
       </View>
     );
   }
 
-return (
+  return (
     <NavigationContainer>
+
       {user ? <ChatStack /> : <AuthStack />}
     </NavigationContainer>
   );

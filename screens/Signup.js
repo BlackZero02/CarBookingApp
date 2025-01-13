@@ -1,108 +1,127 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, Button, TextInput, Image, SafeAreaView, TouchableOpacity, StatusBar, Alert } from "react-native";
+import { View, TextInput, Button, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../config/firebase';
-const backImage = require("../assets/backImage.png");
+import { auth } from '../config/firebase.js';
+import { db } from '../config/firebase.js';
+import { doc, setDoc } from 'firebase/firestore';
 
-export default function Signup({ navigation }) {
-
+export default function Register({ navigation }) {
+  const [name, setName] = useState('');
+  const [contact, setContact] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-const onHandleSignup = () => {
-    if (email !== '' && password !== '') {
-  createUserWithEmailAndPassword(auth, email, password)
-        .then(() => console.log('Signup success'))
-        .catch((err) => Alert.alert("Login error", err.message));
+  const handleSignUp = async () => {
+    try {
+      // Create user with email and password using Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Store additional user data in Firestore under the 'users' collection
+      await setDoc(doc(db, 'users', user.uid), {
+        name: name,
+        contact: contact,
+        email: email,
+        password: password, // Note: Typically, you don't store plain text password in Firestore
+      });
+
+      // Navigate to the Home screen after successful signup
+      navigation.navigate('Home');
+    } catch (error) {
+      alert(error.message); // Show error message in case of failure
     }
   };
-  
+
   return (
     <View style={styles.container}>
-      <Image source={backImage} style={styles.backImage} />
-      <View style={styles.whiteSheet} />
-      <SafeAreaView style={styles.form}>
-        <Text style={styles.title}>Sign Up</Text>
-         <TextInput
+      <Text style={styles.header}>Create Account</Text>
+
+      <TextInput
+        placeholder="Full Name"
+        value={name}
+        onChangeText={setName}
         style={styles.input}
-        placeholder="Enter email"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        textContentType="emailAddress"
-        autoFocus={true}
-        value={email}
-        onChangeText={(text) => setEmail(text)}
       />
       <TextInput
+        placeholder="Contact Number"
+        value={contact}
+        onChangeText={setContact}
+        keyboardType="phone-pad"
         style={styles.input}
-        placeholder="Enter password"
-        autoCapitalize="none"
-        autoCorrect={false}
-        secureTextEntry={true}
-        textContentType="password"
-        value={password}
-        onChangeText={(text) => setPassword(text)}
       />
-      <TouchableOpacity style={styles.button} onPress={onHandleSignup}>
-        <Text style={{fontWeight: 'bold', color: '#fff', fontSize: 18}}> Sign Up</Text>
+      <TextInput
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
+      />
+
+      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+        <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
-      <View style={{marginTop: 20, flexDirection: 'row', alignItems: 'center', alignSelf: 'center'}}>
-        <Text style={{color: 'gray', fontWeight: '600', fontSize: 14}}>Don't have an account? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-          <Text style={{color: '#f57c00', fontWeight: '600', fontSize: 14}}> Log In</Text>
-        </TouchableOpacity>
-      </View>
-      </SafeAreaView>
-      <StatusBar barStyle="light-content" />
+
+      <Text style={styles.footerText}>
+        Already have an account? 
+        <Text style={styles.linkText} onPress={() => navigation.navigate('Login')}>
+          Login
+        </Text>
+      </Text>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: "orange",
-    alignSelf: "center",
-    paddingBottom: 24,
-  },
-  input: {
-    backgroundColor: "#F6F7FB",
-    height: 58,
-    marginBottom: 20,
-    fontSize: 16,
-    borderRadius: 10,
-    padding: 12,
-  },
-  backImage: {
-    width: "100%",
-    height: 340,
-    position: "absolute",
-    top: 0,
-    resizeMode: 'cover',
-  },
-  whiteSheet: {
-    width: '100%',
-    height: '75%',
-    position: "absolute",
-    bottom: 0,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 60,
-  },
-  form: {
-    flex: 1,
-    justifyContent: 'center',
-    marginHorizontal: 30,
-  },
-  button: {
-    backgroundColor: '#f57c00',
-    height: 58,
-    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 40,
+    padding: 16,
+    backgroundColor: '#f3f4f6', // Light Gray Background
+  },
+  header: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#003366', // Dark Blue
+    marginBottom: 30,
+  },
+  input: {
+    height: 50,
+    width: '100%',
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 10,
+    marginBottom: 20,
+    paddingLeft: 15,
+    backgroundColor: '#fff',
+    fontSize: 16,
+  },
+  button: {
+    width: '100%',
+    padding: 15,
+    backgroundColor: '#003366', // Dark Blue
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  footerText: {
+    fontSize: 16,
+    color: '#555', // Dark Gray
+  },
+  linkText: {
+    color: '#66ccff', // Light Blue
+    fontWeight: 'bold',
   },
 });
